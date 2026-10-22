@@ -3,17 +3,12 @@
 [![Validate](https://github.com/Mitternacht/everest-desktop/actions/workflows/validate.yml/badge.svg)](https://github.com/Mitternacht/everest-desktop/actions/workflows/validate.yml)
 
 A floating-first, macOS-inspired desktop layer for **Omarchy 4.0.6**.
-Original mountain artwork, restrained colors, a top bar, an application dock,
-and familiar Super-key shortcuts. **Dawn** is light; **Dusk** is dark.
+Restrained colors, a top bar, an application dock, and familiar Super-key shortcuts. **Dawn** is light; **Dusk** is dark.
 
 Everest is an additional user configuration layer. Omarchy retains its update
 mechanism, launcher, notifications, system controls, lock screen, and polkit agent.
 It does not run macOS applications.
 
-![Dawn mountain artwork](assets/dawn.svg)
-![Dusk mountain artwork](assets/dusk.svg)
-
-These images show the original wallpapers, not screenshots of a tested desktop.
 This project was authored directly on GitHub without a local checkout on the
 authoring machine. Automated checks run on GitHub. A real Omarchy graphical
 session has not yet been tested.
