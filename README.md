@@ -90,9 +90,6 @@ theme interfaces. Omarchy retains its update mechanism, core shell services,
 lock screen, and authentication agent. Compatibility is tied to an inspected
 upstream version; see [upstream.lock.json](upstream.lock.json).
 
-This repository is authored directly on GitHub. No local checkout or project
-downloads were used on the authoring machine.
-
 ## License
 
 Code and palettes are MIT licensed; see [LICENSE](LICENSE) and [NOTICE](NOTICE).
