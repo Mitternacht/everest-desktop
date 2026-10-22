@@ -1,0 +1,19 @@
+{
+  "license": "https://www.pexels.com/license/",
+  "photos": {
+    "dawn": {
+      "id": 31410275,
+      "sha256": "91c13cfc71cf4d0967f2047a0806c98ea1ebbb91ef7bcecafd5cfd0fa0be902a",
+      "bytes": 586359,
+      "width": 3840,
+      "height": 2160
+    },
+    "dusk": {
+      "id": 13449825,
+      "sha256": "38d63d63705ca4679ac977b6d7d6e6d5e30e9ed683d0ef8e84937dba344e6eba",
+      "bytes": 802672,
+      "width": 3840,
+      "height": 2160
+    }
+  }
+}
