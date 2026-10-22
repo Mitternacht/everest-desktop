@@ -135,7 +135,7 @@ class Everest:
         xdg = os.environ.get("XDG_CONFIG_HOME")
         if xdg and Path(xdg) != self.home / ".config":
             raise Conflict("Nondefault XDG_CONFIG_HOME is unsupported by this Omarchy integration.")
-        for name in ("omarchy-version", "hyprctl", "qs", "magick", "omarchy-menu",
+        for name in ("omarchy-version", "hyprctl", "qs", "magick", "rsvg-convert", "gtk-launch", "uwsm-app", "omarchy-menu",
                      "omarchy-launch-nautilus", "omarchy-launch-browser", "xdg-terminal-exec"):
             if not shutil.which(name):
                 raise Conflict("Missing Omarchy dependency: " + name)
@@ -210,6 +210,16 @@ class Everest:
         else:
             manifest["bar_before"] = {
                 key: {"exists": key in bar, "value": bar.get(key)} for key in desired}
+        # Take provenance when first managing a key; retire dropped keys immediately.
+        for key in desired:
+            if key not in manifest["bar_before"]:
+                manifest["bar_before"][key] = {"exists": key in bar, "value": bar.get(key)}
+        for key in set(manifest.get("bar_after", {})) - set(desired):
+            before = manifest["bar_before"].pop(key)
+            if before["exists"]:
+                bar[key] = before["value"]
+            else:
+                bar.pop(key, None)
         bar.update(desired)
         manifest["bar_after"] = desired
         outputs[SHELL] = encoded(shell)
@@ -254,6 +264,9 @@ class Everest:
                 if rel not in dirs:
                     dirs.append(rel)
                 parent = parent.parent
+        # Retain a recovery entry point even if source and installed CLI are removed.
+        if self.read(self.state / "recover.py") is None:
+            self.atomic(self.state / "recover.py", Path(__file__).read_bytes(), 0o700)
         self.atomic(self.state / "pending.json", encoded(journal))
         if manifest is not None:
             for relative, before, _, _ in operations:
@@ -274,7 +287,7 @@ class Everest:
         self.atomic(self.state / "pending.json", None)
         return True
 
-    def recover(self):
+    def recover(self, dry_run=False):
         raw = self.read(self.state / "pending.json")
         if raw is None:
             return
@@ -285,6 +298,8 @@ class Everest:
         if self.read(self.state / "manifest.json") not in (
                 unpack(journal["old_manifest"]), unpack(journal["new_manifest"])):
             raise Conflict("Manifest changed during interrupted transaction.")
+        if dry_run:
+            return [op["path"] for op in journal["operations"]]
         for op in reversed(journal["operations"]):
             self.atomic(self.home / op["path"], unpack(op["before"]), op["mode"])
         self.atomic(self.state / "manifest.json", unpack(journal["old_manifest"]))
@@ -312,14 +327,12 @@ class Everest:
         for relative, entry in manifest["files"].items():
             current = self.read(self.home / relative)
             original = self.original(entry)
-            if digest(current) == entry["after"]:
-                restored = original
-            elif relative == HYPR and current is not None:
-                text = current.decode()
-                if text.count(BLOCK) != 1 or text.count(BEGIN) != 1 or text.count(END) != 1:
-                    raise Conflict("Changed Everest Lua block; preserving " + HYPR)
-                restored = text.replace(BLOCK, "", 1).encode()
-            elif relative == SHELL and current is not None:
+            if current == original:
+                continue
+            if relative == SHELL and current is not None:
+                # Shared JSON is restored by property even after a reinstall incorporated
+                # outside edits into its installed hash. Whole-file hashes cannot prove
+                # ownership of unrelated idle/plugin settings.
                 shell = strict_json(current)
                 bar = shell.get("bar")
                 if not isinstance(bar, dict):
@@ -332,16 +345,25 @@ class Everest:
                         bar[key] = before["value"]
                     else:
                         del bar[key]
-                if not bar:
+                original_shell = strict_json(original)
+                if not bar and "bar" not in original_shell:
                     shell.pop("bar", None)
-                restored = encoded(shell)
-            elif current == original:
-                continue
+                restored = original if same(shell, original_shell) else encoded(shell)
+            elif digest(current) == entry["after"]:
+                restored = original
+            elif relative == HYPR and current is not None:
+                text = current.decode()
+                if text.count(BLOCK) != 1 or text.count(BEGIN) != 1 or text.count(END) != 1:
+                    raise Conflict("Changed Everest Lua block; preserving " + HYPR)
+                restored = text.replace(BLOCK, "", 1).encode()
             else:
                 raise Conflict("Changed managed file; preserving " + relative +
                                ". Save your edits, then restore the installed version before removal.")
             if current != restored:
                 operations.append((relative, current, restored, entry["mode"]))
+        # Detach shared integration before deleting payload; recover reverses this order.
+        operations.sort(key=lambda op: 0 if op[0] == HYPR else 1 if op[0] == SHELL
+                        else 3 if op[0] == ".config/everest/everest.py" else 2)
         return operations, manifest
 
     def clean_dirs(self, manifest):
@@ -365,7 +387,7 @@ def main():
     if args.command == "doctor":
         print("Target: Omarchy 4.0.6 / Lua Hyprland / Quickshell")
         print("Platform:", sys.platform)
-        for command in ("omarchy-version", "hyprctl", "qs", "magick"):
+        for command in ("omarchy-version", "hyprctl", "qs", "magick", "rsvg-convert", "gtk-launch"):
             print(command + ":", shutil.which(command) or "missing")
         if shutil.which("omarchy-version"):
             subprocess.run(["omarchy-version"], check=False)
@@ -395,6 +417,10 @@ def main():
             print(("REMOVE " if after is None else "RESTORE ") + str(app.home / relative))
         if args.dry_run:
             return
+    if args.command == "recover" and args.dry_run:
+        for relative in app.recover(dry_run=True) or []:
+            print("RESTORE " + str(app.home / relative))
+        return
     app.safe(app.state / "lock")
     app.state.mkdir(parents=True, exist_ok=True, mode=0o700)
     os.chmod(app.state, 0o700)

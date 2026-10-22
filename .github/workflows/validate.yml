@@ -12,7 +12,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Install validation tools on the GitHub runner
-        run: pacman -Syu --noconfirm --needed git python lua imagemagick qt6-declarative quickshell shellcheck
+        run: pacman -Syu --noconfirm --needed git python lua imagemagick librsvg qt6-declarative quickshell shellcheck
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false

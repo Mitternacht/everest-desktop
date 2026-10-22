@@ -47,7 +47,8 @@ Install on the **target Linux machine**, as its normal desktop user:
 
 - Omarchy **4.0.6**, including its Lua-based Hyprland configuration.
 - Existing ~/.config/hypr/hyprland.lua and ~/.config/omarchy/shell.json.
-- Python 3.11+, Quickshell 0.3.2-compatible APIs, ImageMagick 7, and hyprctl.
+- Python 3.11+, Quickshell 0.3.2-compatible APIs, ImageMagick 7, librsvg's rsvg-convert, and hyprctl.
+- Omarchy's existing uwsm-app and gtk-launch desktop-entry launch helpers.
 - Standard Omarchy wrappers: omarchy-menu, omarchy-launch-nautilus,
   omarchy-launch-browser, and xdg-terminal-exec.
 - Noto Sans and Yaru icons, already part of the inspected Omarchy package set.
@@ -143,10 +144,18 @@ last valid palette if another theme lacks the Everest palette file.
   ordinary workspace. Super+Ctrl+M shows/hides the shelf.
 - Super+Shift+T tiles/floats the current window. Omarchy's tiling shortcuts remain
   available. New windows continue to float by default.
-- Natural touchpad scrolling, tap-to-click, click-to-focus, border resizing, and
-  a three-finger horizontal workspace swipe are enabled.
-- Use the bar's workspace buttons or Omarchy's Super+number shortcuts if gestures
-  are unsupported. Three-finger dragging is disabled to reserve swipe gestures.
+- Natural touchpad scrolling, tap-to-click, click-to-focus and border resizing are enabled.
+- Workspace buttons and Omarchy's Super+number shortcuts work without gestures.
+  After checking your personal gestures, optionally add the following to your
+  existing ~/.config/hypr/input.lua module, before Everest's include loads:
+
+~~~lua
+everest_workspace_gesture = true
+~~~
+
+This enables a three-finger horizontal workspace swipe and disables three-finger
+dragging. Leave it unset if you already have a conflicting horizontal/swipe
+gesture; Hyprland rejects duplicate gesture definitions.
 
 Full [shortcut reference](docs/shortcuts.md) and [manual test checklist](docs/testing.md).
 
@@ -178,12 +187,15 @@ State is stored in ~/.local/state/everest/ with:
 - manifest.json: every managed path, installed hash, original hash/mode, backup path.
 - backups/: original bytes from before the first installation, kept after removal.
 - pending.json: durable undo images for an interrupted operation, when present.
+- recover.py: a retained recovery CLI, usable even if a removal deleted the installed copy.
 
 To inspect state or recover an interrupted installation/update/removal:
 
 ~~~bash
 python3 everest.py status
 python3 everest.py recover
+# If the source and installed CLI are unavailable:
+python3 "$HOME/.local/state/everest/recover.py" recover
 ~~~
 
 Recover restores the state immediately before the interrupted operation.
@@ -253,9 +265,10 @@ buttons and swipe navigation provide real workspace switching. App grouping uses
 Wayland app IDs in the dock and Hyprland application classes for keyboard
 switching; applications that publish inconsistent identities may appear twice.
 
-Super editing shortcuts are not universally available across GTK, Qt, Electron,
-and terminals. Ctrl+C/V/X/Z remain application shortcuts; terminals retain
-Ctrl+C interrupt and Ctrl+Shift+C/V copy/paste. There is no global Ctrl/Super swap.
+Omarchy's existing terminal-aware Super+C/V/X copy/paste/cut bindings are retained.
+Undo, select-all, and other Command-style shortcuts vary across GTK, Qt, Electron
+and terminals. Native Ctrl shortcuts remain available; terminals retain Ctrl+C
+interrupt and Ctrl+Shift+C/V copy/paste. There is no global Ctrl/Super swap.
 
 Window titlebars, file-manager details, scroll physics, fractional scaling,
 XWayland apps, and multi-monitor behavior depend on applications, drivers,

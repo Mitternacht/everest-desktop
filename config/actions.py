@@ -12,11 +12,26 @@ def query(name):
     return json.loads(subprocess.check_output(["hyprctl", "-j", name], text=True, timeout=3))
 
 
-def dispatch(name, argument=None):
-    command = ["hyprctl", "dispatch", name]
-    if argument is not None:
-        command.append(argument)
-    subprocess.run(command, check=True, capture_output=True, timeout=3)
+def dispatch(expression):
+    # Hyprland's Lua config passes dispatch arguments to hl.dispatch(...).
+    # Legacy hyprctl dispatcher names are not accepted in this mode.
+    result = subprocess.run(["hyprctl", "dispatch", expression], check=True,
+                            capture_output=True, text=True, timeout=3)
+    if result.stdout.strip() != "ok":
+        raise RuntimeError(result.stdout.strip() or result.stderr.strip() or "Dispatcher failed")
+
+
+def selector(window):
+    address = window.get("address", "")
+    if not re.fullmatch(r"0x[0-9a-fA-F]+", address):
+        raise RuntimeError("Unexpected Hyprland window address")
+    return json.dumps("address:" + address)
+
+
+def move(window, workspace, follow=False):
+    dispatch("hl.dsp.window.move({ workspace = " + json.dumps(workspace) +
+             ", window = " + selector(window) + ", follow = " +
+             ("true" if follow else "false") + " })")
 
 
 def app_id(window):
@@ -61,7 +76,7 @@ def main():
     active = query("activewindow")
     if args.command == "minimize":
         if active and normal(active):
-            dispatch("movetoworkspacesilent", SHELF + ",address:" + active["address"])
+            move(active, SHELF)
         return
     if args.command == "restore":
         shelf = [w for w in clients if w.get("workspace", {}).get("name") == SHELF]
@@ -71,16 +86,13 @@ def main():
         if not isinstance(workspace, int) or workspace <= 0:
             raise RuntimeError("Focus an ordinary workspace before restoring a window.")
         target = min(shelf, key=lambda w: w.get("focusHistoryID", 999999))
-        dispatch("movetoworkspace", str(workspace) + ",address:" + target["address"])
+        move(target, str(workspace), follow=True)
     else:
         target = choose(args.command, clients, active)
         if target is None:
             return
-    address = target["address"]
-    if not re.fullmatch(r"0x[0-9a-fA-F]+", address):
-        raise RuntimeError("Unexpected Hyprland window address")
-    dispatch("focuswindow", "address:" + address)
-    dispatch("bringactivetotop")
+    dispatch("hl.dsp.focus({ window = " + selector(target) + " })")
+    dispatch("hl.dsp.window.bring_to_top()")
 
 
 if __name__ == "__main__":

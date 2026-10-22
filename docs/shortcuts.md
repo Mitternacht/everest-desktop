@@ -34,7 +34,7 @@ the group's most recently used window. The shelf is excluded. Group order is
 alphabetical by application class, not an animated MRU switcher.
 
 The preferences shortcut replaces Omarchy's Super+comma notification-dismissal
-binding. Notification controls remain in the shell; Super+Shift+comma still
+binding. Screenshot shortcuts replace the physical move-to-workspace-4/5 chords. Notification controls remain in the shell; Super+Shift+comma still
 dismisses all notifications, and Super+Shift+Alt+comma opens notification history.
 
 Dock: left-click launches/focuses and cycles existing windows. Right-click
@@ -43,17 +43,19 @@ pins launch Applications, Files, Terminal and Browser; other running apps follow
 
 Mouse: click to focus, resize at borders, retain Omarchy's Super+drag window
 move/resize bindings. Touchpad: natural scrolling, tap to click, clickfinger
-right-click, three-finger horizontal workspace swipe. Unsupported hardware uses
-workspace buttons/shortcuts. Three-finger dragging is disabled.
+right-click. Workspace swiping is opt-in through everest_workspace_gesture = true
+in your existing hypr/input.lua; it disables three-finger dragging. Workspace
+buttons/shortcuts work without gesture hardware.
 
 ## Editing and terminal behavior
 
-Use native application Ctrl+C/V/X/A/Z shortcuts. In terminals, Ctrl+C continues
+Omarchy's existing terminal-aware Super+C/V/X bindings remain available.
+Use native application Ctrl+C/V/X/A/Z shortcuts where preferred. In terminals, Ctrl+C continues
 to send an interrupt; Ctrl+Shift+C/V copy and paste where supported. Super+Q
 closes the focused window and may terminate a terminal job after its application
 confirmation policy. Super+W is left at Omarchy's default; it is not globally
 mapped to close a browser tab.
 
 No global Ctrl/Super swap, synthetic editing injection, or application shortcut
-rewriting is installed. Toolkit and terminal differences are intentional limits
+rewriting is added by Everest. Toolkit and terminal differences are intentional limits
 of this initial layer.

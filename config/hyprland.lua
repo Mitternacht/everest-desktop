@@ -8,7 +8,6 @@ hl.config({
       natural_scroll = true,
       tap_to_click = true,
       clickfinger_behavior = true,
-      drag_3fg = 0,
     },
   },
   decoration = {
@@ -52,13 +51,19 @@ bind("SUPER + SHIFT + T", "Everest: tile or float current window",
   hl.dsp.window.float({ action = "toggle" }))
 bind("SUPER + RETURN", "Everest: terminal", "xdg-terminal-exec")
 bind("SUPER + E", "Everest: files", "omarchy-launch-nautilus")
-bind("SUPER + SHIFT + 4", "Everest: screenshot selection", "omarchy-capture-screenshot")
+-- Omarchy binds workspace moves by physical code; remove both matching forms.
+hl.unbind("SUPER + SHIFT + code:13")
+hl.unbind("SUPER + SHIFT + code:14")
+bind("SUPER + SHIFT + 4", "Everest: screenshot selection", "omarchy-capture-screenshot region")
 bind("SUPER + SHIFT + 5", "Everest: capture menu", "omarchy-menu toggle capture")
 
--- Reserve three-finger swipes for workspace navigation, rather than dragging.
-hl.gesture({ fingers = 3, direction = "horizontal", action = "workspace" })
--- Workspace bar and default Super+number bindings are the hardware fallback.
--- Advanced gestures and compositor plugins are deferred until graphical testing.
+-- Opt in after checking personal gestures: set everest_workspace_gesture = true
+-- in the existing hypr/input.lua module. Duplicate Hyprland gestures are errors.
+if everest_workspace_gesture == true then
+  hl.config({ input = { touchpad = { drag_3fg = 0 } } })
+  hl.gesture({ fingers = 3, direction = "horizontal", action = "workspace" })
+end
+-- Workspace buttons and default Super+number bindings work without a touchpad.
 
 -- A separate shell instance; no replacement of Omarchy's bar, lock, or polkit.
 hl.on("hyprland.start", function()

@@ -44,11 +44,12 @@ Use a spare user account or VM snapshot first.
 - [ ] Close apps; running indicators disappear. Test missing/ambiguous desktop IDs.
 - [ ] Test many apps in the horizontally scrollable dock.
 - [ ] Test two monitors, hotplug, fractional scaling, fullscreen reserved edges.
-- [ ] Natural scrolling, tap/right-click, palm rejection and workspace swipes work.
+- [ ] Natural scrolling, tap/right-click and palm rejection work.
+- [ ] Opt-in workspace swipe works without colliding with personal gestures.
 - [ ] Keyboard-only workspace fallback works with no touchpad.
 - [ ] Screenshot/capture tools and notifications work.
 - [ ] Ctrl+C interrupt and terminal Ctrl+Shift+C/V are unchanged.
-- [ ] App Ctrl+C/V/X/Z work; Super binding conflicts are understood.
+- [ ] App Ctrl+C/V/X/Z and inherited Omarchy Super+C/V/X work; binding conflicts are understood.
 - [ ] Stop the dock independently; core session/lock/polkit remain functional.
 - [ ] Restore all shelf windows, previous theme/background, then uninstall.
 - [ ] Original files/permissions return; unrelated user edits survive.

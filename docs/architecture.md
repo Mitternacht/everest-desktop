@@ -32,7 +32,7 @@ is changed. Unknown bar properties and other root configuration keys are kept.
 Use palette-only local theme directories plus supported shell section overrides.
 No code is hidden inside theme Lua. Omarchy generates application colors through
 its normal templates. Original SVG mountain artwork is converted to PNG by the
-already installed ImageMagick runtime on the target machine.
+ImageMagick runtime and librsvg SVG renderer on the target machine.
 
 An appended Lua include runs after defaults and existing personal modules. The
 layer uses the inspected hl API, not legacy Hyprland .conf syntax. New windows
@@ -54,9 +54,11 @@ deterministic rather than macOS's modifier-held app-switcher UI.
    gestures, per-device tuning, and robust user-editable dock pinning. Select
    extensions only after compatibility and maintenance checks.
 
-No additional runtime packages are selected. The official Omarchy base package
-list supplies Quickshell, Nautilus, Foot, ImageMagick, fonts, and Python via its
-existing Python dependencies. The installer never installs packages for you.
+The official Omarchy package set supplies Quickshell, Nautilus, Foot, ImageMagick,
+fonts, and Python through its existing dependencies. SVG rendering also requires
+librsvg's rsvg-convert, commonly installed by desktop applications; preflight
+checks it explicitly. No additional shell, launcher, or compositor plugin is
+required. The installer never installs packages for you.
 
 ## Reversibility
 

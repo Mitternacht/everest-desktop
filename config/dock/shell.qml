@@ -39,10 +39,10 @@ ShellRoot {
             if (window.parent)
                 continue; // Dialogs are represented by their parent app.
             const id = normalized(window.appId);
-            const entry = DesktopEntries.heuristicLookup(window.appId);
+            const entry = id ? DesktopEntries.heuristicLookup(window.appId) : null;
             const desktopId = entry ? normalized(entry.id) : id;
             let item = result.find(candidate =>
-                candidate.aliases.indexOf(id) >= 0 || candidate.aliases.indexOf(desktopId) >= 0);
+                (id && candidate.aliases.indexOf(id) >= 0) || (desktopId && candidate.aliases.indexOf(desktopId) >= 0));
             if (!item) {
                 item = { key: id || window.title, name: entry ? entry.name : (window.appId || window.title || "Window"),
                     icon: entry ? entry.icon : "application-x-executable",
@@ -58,7 +58,7 @@ ShellRoot {
         if (item.command.length)
             Quickshell.execDetached(item.command);
         else if (item.entry)
-            item.entry.execute();
+            Quickshell.execDetached(["uwsm-app", "--", "gtk-launch", item.entry.id + ".desktop"]);
     }
 
     function activate(item) {

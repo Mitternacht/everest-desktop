@@ -98,6 +98,67 @@ class InstallerTests(unittest.TestCase):
         self.assertEqual(result["bar"]["position"], "bottom")
         self.assertIsNone(result["bar"]["transparent"])
 
+    def test_reinstall_preserves_later_unrelated_edits_on_removal(self):
+        self.install()
+        value = json.loads(self.shell.read_text())
+        value["idle"]["lock"] = 1234
+        value["plugins"].append({"id": "later.plugin"})
+        value["bar"]["laterSetting"] = "preserve"
+        self.shell.write_text(json.dumps(value))
+        self.install()
+        self.uninstall()
+        value = json.loads(self.shell.read_text())
+        self.assertEqual(value["idle"]["lock"], 1234)
+        self.assertIn({"id": "later.plugin"}, value["plugins"])
+        self.assertEqual(value["bar"]["laterSetting"], "preserve")
+        self.assertEqual(value["bar"]["position"], "bottom")
+
+    def test_empty_original_bar_restores_exactly(self):
+        self.shell.write_bytes(b'{"version":1,"bar":{}}\n')
+        original = self.shell.read_bytes()
+        self.install()
+        self.uninstall()
+        self.assertEqual(self.shell.read_bytes(), original)
+
+    def test_managed_bar_keys_can_be_added_and_retired_by_update(self):
+        self.install()
+        source = Path(self.temp.name) / "changed-source"
+        shutil.copytree(ROOT, source, ignore=shutil.ignore_patterns(".git", "__pycache__"))
+        config = source / "config/shell-bar.json"
+        desired = json.loads(config.read_text())
+        desired.pop("position")
+        desired["futureSetting"] = True
+        config.write_text(json.dumps(desired))
+        self.app.source = source
+        self.install()
+        current = json.loads(self.shell.read_text())
+        self.assertEqual(current["bar"]["position"], "bottom")
+        self.assertTrue(current["bar"]["futureSetting"])
+        current["idle"]["lock"] = 1201
+        self.shell.write_text(json.dumps(current))
+        self.uninstall()
+        restored = json.loads(self.shell.read_text())
+        self.assertEqual(restored["idle"]["lock"], 1201)
+        self.assertEqual(restored["bar"]["position"], "bottom")
+        self.assertNotIn("futureSetting", restored["bar"])
+
+    def test_recovery_dry_run_is_read_only(self):
+        ops, manifest = self.app.plan_install()
+        with self.assertRaises(OSError):
+            self.app.execute(ops, manifest, fail_after=1)
+        snapshot = self.snapshot()
+        journal = self.app.read(self.app.state / "pending.json")
+        self.assertEqual(self.app.recover(dry_run=True), [op[0] for op in ops])
+        self.assertEqual(self.snapshot(), snapshot)
+        self.assertEqual(self.app.read(self.app.state / "pending.json"), journal)
+
+    def test_uninstall_detaches_first_and_retains_recovery_cli(self):
+        self.install()
+        ops, _ = self.app.plan_uninstall()
+        self.assertEqual([op[0] for op in ops[:2]], [installer.HYPR, installer.SHELL])
+        self.assertEqual(ops[-1][0], ".config/everest/everest.py")
+        self.assertTrue((self.app.state / "recover.py").is_file())
+
     def test_modified_owned_file_blocks_all_removal(self):
         self.install()
         path = self.home / ".config/everest/actions.py"
@@ -247,6 +308,24 @@ class SwitchingTests(unittest.TestCase):
     def test_window_cycle_stays_in_app_and_wraps(self):
         self.assertEqual(actions.choose("next-window", self.clients, self.clients[0])["address"], "0x2")
         self.assertEqual(actions.choose("previous-window", self.clients, self.clients[0])["address"], "0x2")
+
+    def test_lua_ipc_and_textual_errors(self):
+        import subprocess
+        with patch.object(actions.subprocess, "run",
+                          return_value=subprocess.CompletedProcess([], 0, "ok\n", "")) as run:
+            actions.move(self.clients[0], actions.SHELF)
+            expression = run.call_args.args[0][-1]
+            self.assertIn("hl.dsp.window.move(", expression)
+            self.assertIn('"address:0x1"', expression)
+            self.assertNotIn("movetoworkspacesilent", expression)
+        with patch.object(actions.subprocess, "run",
+                          return_value=subprocess.CompletedProcess([], 0, "Invalid dispatcher", "")):
+            with self.assertRaises(RuntimeError):
+                actions.dispatch("hl.dsp.window.bring_to_top()")
+        with patch.object(actions.subprocess, "run") as run:
+            with self.assertRaises(RuntimeError):
+                actions.move({"address": "bad"}, "1")
+            run.assert_not_called()
 
     def test_empty_session_is_harmless(self):
         self.assertIsNone(actions.choose("next-app", [], {}))
