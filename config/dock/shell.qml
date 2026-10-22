@@ -35,7 +35,11 @@ ShellRoot {
               command: ["omarchy-launch-browser"], windows: [] }
         ];
         for (const window of windows) {
-            if (window.parent || window.title === "Everest Settings")
+            if (window.title === "Everest Settings") {
+                result.find(item => item.key === "settings").windows.push(window);
+                continue;
+            }
+            if (window.parent)
                 continue; // Dialogs are represented by their parent app.
             const id = normalized(window.appId);
             const entry = id ? DesktopEntries.heuristicLookup(window.appId) : null;
@@ -53,9 +57,19 @@ ShellRoot {
         return result;
     }
 
+    function showSettings() {
+        settingsWindow.visible = true;
+        for (const window of windows) {
+            if (window.title === "Everest Settings") {
+                window.activate();
+                break;
+            }
+        }
+    }
+
     function launch(item) {
         if (item.key === "settings") {
-            settingsWindow.visible = true;
+            showSettings();
             return;
         }
         if (item.command.length)
@@ -107,7 +121,7 @@ ShellRoot {
     IpcHandler {
         target: "dock"
         function reloadTheme(): void { paletteFile.reload(); }
-        function settings(): void { settingsWindow.visible = !settingsWindow.visible; }
+        function settings(): void { root.showSettings(); }
         function stop(): void { Qt.quit(); }
     }
 

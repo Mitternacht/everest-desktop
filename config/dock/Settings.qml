@@ -8,6 +8,7 @@ FloatingWindow {
     required property var palette
     implicitWidth: 640
     implicitHeight: 500
+    minimumSize: Qt.size(600, 430)
     title: "Everest Settings"
     color: palette.background
     visible: false
