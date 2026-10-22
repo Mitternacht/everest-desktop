@@ -1,0 +1,9 @@
+The bundled photographs are licensed separately from Everest's MIT-licensed code.
+
+Pexels License
+https://www.pexels.com/license/
+
+Pexels permits free use and modification without attribution.
+The photographs are incorporated into the Everest desktop themes.
+They are not offered as a separate stock-photo or wallpaper service, and
+the project's MIT license does not relicense these photographs.

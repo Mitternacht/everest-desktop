@@ -1,5 +1,7 @@
 -- Everest: appended after Omarchy defaults and personal overrides.
 -- Target: Omarchy 4.0.6 / Hyprland Lua. Never loaded as a theme script.
+hl.env("OMARCHY_MENU_FONT", "Noto Sans")
+
 hl.config({
   general = { border_size = 1, resize_on_border = true },
   input = {
@@ -33,7 +35,9 @@ end
 local actions = "python3 " .. o.shell_quote(os.getenv("HOME") .. "/.config/everest/actions.py") .. " "
 
 bind("SUPER + SPACE", "Everest: search applications", "omarchy-menu toggle apps")
-bind("SUPER + comma", "Everest: preferences and system menus", "omarchy-menu toggle")
+bind("SUPER + comma", "Everest: settings",
+  "qs ipc -n -p " .. o.shell_quote(os.getenv("HOME") .. "/.config/everest/dock") ..
+  " call -- dock settings || omarchy-menu toggle setup")
 bind("SUPER + Q", "Everest: close window", hl.dsp.window.close())
 bind("SUPER + TAB", "Everest: next application", actions .. "next-app")
 bind("SUPER + SHIFT + TAB", "Everest: previous application", actions .. "previous-app")

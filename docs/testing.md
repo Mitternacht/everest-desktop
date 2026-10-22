@@ -4,7 +4,8 @@
 
 The GitHub Validate workflow runs in an Arch Linux container on a GitHub runner.
 It checks Python/Bash/Lua/QML syntax, JSON/TOML data and palette consistency,
-original SVG parsing, and actual deterministic PNG rendering with ImageMagick 7.
+bundled photograph hashes and JPEG dimensions. The target installer copies
+these bundled files without rendering or network calls.
 
 Isolated fake-home tests cover install/identical reinstall/exact uninstall,
 original permissions and CRLF bytes, preserving unrelated shared-config edits,
@@ -32,6 +33,10 @@ Use a spare user account or VM snapshot first.
 - [ ] Omarchy shell stays running with its existing idle, lock and polkit services.
 - [ ] Lock/unlock, authentication prompts, suspend/resume and lid behavior work.
 - [ ] Dawn/Dusk render the bar, launcher, notifications, terminal and file manager coherently.
+- [ ] Interface text uses Noto Sans across the bar, menus, panels and notifications.
+- [ ] Terminal fonts retain their original monospace configuration.
+- [ ] Unloading the typography plugin restores the previous shell font.
+- [ ] Settings opens from the dock and Super+comma; each category opens its graphical control.
 - [ ] Wallpaper switches; dock colors follow within three seconds.
 - [ ] Bar clock/workspaces and applicable network/Bluetooth/audio/display/battery/power panels work.
 - [ ] Disabled/unavailable hardware controls fail gracefully.

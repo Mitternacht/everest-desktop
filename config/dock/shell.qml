@@ -28,15 +28,14 @@ ShellRoot {
             { key: "files", name: "Files", icon: "system-file-manager",
               aliases: ["org.gnome.nautilus", "nautilus"],
               command: ["omarchy-launch-nautilus"], windows: [] },
-            { key: "terminal", name: "Terminal", icon: "utilities-terminal",
-              aliases: ["foot", "alacritty", "kitty", "com.mitchellh.ghostty"],
-              command: ["xdg-terminal-exec"], windows: [] },
+            { key: "settings", name: "Settings", icon: "preferences-system",
+              aliases: [], command: [], windows: [] },
             { key: "browser", name: "Browser", icon: "web-browser",
               aliases: ["chromium", "firefox", "google-chrome", "brave-browser", "com.brave.browser"],
               command: ["omarchy-launch-browser"], windows: [] }
         ];
         for (const window of windows) {
-            if (window.parent)
+            if (window.parent || window.title === "Everest Settings")
                 continue; // Dialogs are represented by their parent app.
             const id = normalized(window.appId);
             const entry = id ? DesktopEntries.heuristicLookup(window.appId) : null;
@@ -55,6 +54,10 @@ ShellRoot {
     }
 
     function launch(item) {
+        if (item.key === "settings") {
+            settingsWindow.visible = true;
+            return;
+        }
         if (item.command.length)
             Quickshell.execDetached(item.command);
         else if (item.entry)
@@ -68,6 +71,11 @@ ShellRoot {
         }
         const current = item.windows.indexOf(active);
         item.windows[(current + 1) % item.windows.length].activate();
+    }
+
+    Settings {
+        id: settingsWindow
+        palette: root.palette
     }
 
     FileView {
@@ -99,6 +107,7 @@ ShellRoot {
     IpcHandler {
         target: "dock"
         function reloadTheme(): void { paletteFile.reload(); }
+        function settings(): void { settingsWindow.visible = !settingsWindow.visible; }
         function stop(): void { Qt.quit(); }
     }
 

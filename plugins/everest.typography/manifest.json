@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "everest.typography",
+  "name": "Everest Typography",
+  "version": "1.0.0",
+  "author": "Mitternacht",
+  "description": "Proportional desktop typography while preserving terminal fonts",
+  "kinds": [
+    "service"
+  ],
+  "entryPoints": {
+    "service": "Service.qml"
+  }
+}

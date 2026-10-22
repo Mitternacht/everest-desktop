@@ -6,7 +6,7 @@ Omarchy/user bindings; other Omarchy shortcuts remain available.
 | Shortcut | Action |
 |---|---|
 | Super+Space | Application launcher/search |
-| Super+comma | Omarchy menu: setup/preferences/system entry point |
+| Super+comma | Everest graphical Settings |
 | Super+Return | Default terminal through xdg-terminal-exec |
 | Super+E | Nautilus file manager through Omarchy |
 | Super+Q | Close the current window |
@@ -39,7 +39,8 @@ dismisses all notifications, and Super+Shift+Alt+comma opens notification histor
 
 Dock: left-click launches/focuses and cycles existing windows. Right-click
 requests a new instance. Dialogs follow their parent application. Four built-in
-pins launch Applications, Files, Terminal and Browser; other running apps follow.
+pins open Applications, Files, Settings and Browser; other running apps follow.
+Terminal remains available through Super+Return and application search.
 
 Mouse: click to focus, resize at borders, retain Omarchy's Super+drag window
 move/resize bindings. Touchpad: natural scrolling, tap to click, clickfinger

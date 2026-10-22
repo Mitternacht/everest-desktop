@@ -23,7 +23,7 @@ BLOCK = '\n' + BEGIN + '\ndofile(os.getenv("HOME") .. "/.config/everest/hyprland
 HYPR = ".config/hypr/hyprland.lua"
 SHELL = ".config/omarchy/shell.json"
 OWNED = [".config/everest", ".config/omarchy/themes/everest-dawn",
-         ".config/omarchy/themes/everest-dusk"]
+         ".config/omarchy/themes/everest-dusk", ".config/omarchy/plugins/everest.typography"]
 
 
 class Conflict(RuntimeError):
@@ -135,7 +135,7 @@ class Everest:
         xdg = os.environ.get("XDG_CONFIG_HOME")
         if xdg and Path(xdg) != self.home / ".config":
             raise Conflict("Nondefault XDG_CONFIG_HOME is unsupported by this Omarchy integration.")
-        for name in ("omarchy-version", "hyprctl", "qs", "magick", "rsvg-convert", "gtk-launch", "uwsm-app", "omarchy-menu",
+        for name in ("omarchy-version", "hyprctl", "qs", "gtk-launch", "uwsm-app", "omarchy-menu",
                      "omarchy-launch-nautilus", "omarchy-launch-browser", "xdg-terminal-exec"):
             if not shutil.which(name):
                 raise Conflict("Missing Omarchy dependency: " + name)
@@ -150,20 +150,20 @@ class Everest:
 
     def payload(self):
         result = {".config/everest/everest.py": (self.source / "everest.py").read_bytes()}
-        for name in ("hyprland.lua", "actions.py", "dock/shell.qml"):
+        for name in ("hyprland.lua", "actions.py", "dock/shell.qml", "dock/Settings.qml"):
             result[".config/everest/" + name] = (self.source / "config" / name).read_bytes()
+        for item in sorted((self.source / "plugins/everest.typography").glob("*")):
+            if item.is_file():
+                result[".config/omarchy/plugins/everest.typography/" + item.name] = item.read_bytes()
         for appearance in ("dawn", "dusk"):
             for item in sorted((self.source / "themes" / ("everest-" + appearance)).rglob("*")):
                 if item.is_file():
                     relative = item.relative_to(self.source / "themes").as_posix()
                     result[".config/omarchy/themes/" + relative] = item.read_bytes()
-            svg = (self.source / "assets" / (appearance + ".svg")).read_bytes()
-            if self.enforce:
-                image = subprocess.check_output(
-                    ["magick", "-background", "none", "svg:-", "-strip", "-define", "png:exclude-chunks=all", "png:-"], input=svg, timeout=30)
-            else:
-                image = b"PNG fixture; graphical rendering tested separately in CI"
-            result[".config/omarchy/themes/everest-" + appearance + "/backgrounds/everest.png"] = image
+            image = (self.source / "assets" / (appearance + ".jpg")).read_bytes()
+            if not image.startswith(b"\xff\xd8\xff"):
+                raise Conflict("Invalid bundled JPEG: " + appearance)
+            result[".config/omarchy/themes/everest-" + appearance + "/backgrounds/everest.jpg"] = image
         return result
 
     def plan_install(self):
@@ -171,11 +171,11 @@ class Everest:
         if self.read(self.state / "pending.json"):
             raise Conflict("Interrupted transaction found. Run recover first.")
         prior = self.manifest()
-        if prior is None:
-            for root in OWNED:
-                target = self.home / root
-                if target.exists() or target.is_symlink():
-                    raise Conflict("Unowned destination exists: " + str(target))
+        for root in OWNED:
+            already_owned = prior and any(path.startswith(root + "/") for path in prior["files"])
+            target = self.home / root
+            if not already_owned and (target.exists() or target.is_symlink()):
+                raise Conflict("Unowned destination exists: " + str(target))
         manifest = copy.deepcopy(prior) if prior else {
             "schema": 1, "target": "Omarchy 4.0.6", "files": {},
             "created_dirs": [], "backup_id": uuid.uuid4().hex}
@@ -222,8 +222,33 @@ class Everest:
                 bar.pop(key, None)
         bar.update(desired)
         manifest["bar_after"] = desired
+        plugins = shell.setdefault("plugins", [])
+        if not isinstance(plugins, list):
+            raise Conflict("shell.json plugins must be an array")
+        typography = {"id": "everest.typography"}
+        matches = [item for item in plugins if isinstance(item, dict)
+                   and item.get("id") == typography["id"]]
+        if prior and prior.get("typography_plugin"):
+            if len(matches) != 1 or not same(matches[0], typography):
+                raise Conflict("Everest typography plugin entry was changed")
+        else:
+            if matches:
+                raise Conflict("An unowned Everest typography entry already exists")
+            plugins.append(typography)
+        manifest["typography_plugin"] = True
         outputs[SHELL] = encoded(shell)
         operations = []
+        retired = []
+        for relative in list(manifest["files"]):
+            if relative not in outputs and any(relative.startswith(root + "/") for root in OWNED):
+                entry = manifest["files"][relative]
+                current = self.read(self.home / relative)
+                original = self.original(entry)
+                if digest(current) != entry["after"] and current != original:
+                    raise Conflict("Obsolete managed file changed: " + relative)
+                if current != original:
+                    retired.append((relative, current, original, entry["mode"]))
+                del manifest["files"][relative]
         for relative, data in outputs.items():
             current = self.read(self.home / relative)
             entry = manifest["files"].get(relative)
@@ -232,7 +257,7 @@ class Everest:
             if entry is None:
                 mode = stat.S_IMODE((self.home / relative).stat().st_mode) if current is not None else 0o644
                 entry = {"before": digest(current), "mode": mode,
-                         "backup": "backups/" + manifest["backup_id"] + "/" + str(len(manifest["files"]))}
+                         "backup": "backups/" + manifest["backup_id"] + "/" + uuid.uuid4().hex}
                 manifest["files"][relative] = entry
             entry["after"] = digest(data)
             if current != data:
@@ -243,6 +268,7 @@ class Everest:
                     if rel not in manifest["created_dirs"]:
                         manifest["created_dirs"].append(rel)
                     parent = parent.parent
+        operations.extend(retired)
         return operations, manifest
 
     def execute(self, operations, manifest, fail_after=None):
@@ -270,7 +296,9 @@ class Everest:
         self.atomic(self.state / "pending.json", encoded(journal))
         if manifest is not None:
             for relative, before, _, _ in operations:
-                entry = manifest["files"][relative]
+                entry = manifest["files"].get(relative)
+                if entry is None:
+                    continue  # A retired file already has its original backup.
                 backup = self.state / entry["backup"]
                 if before is not None and self.read(backup) is None and entry["before"] == digest(before):
                     self.atomic(backup, before)
@@ -346,6 +374,17 @@ class Everest:
                     else:
                         del bar[key]
                 original_shell = strict_json(original)
+                if manifest.get("typography_plugin"):
+                    plugins = shell.get("plugins")
+                    if not isinstance(plugins, list):
+                        raise Conflict("Changed plugin list; preserving shell.json")
+                    matches = [item for item in plugins if isinstance(item, dict)
+                               and item.get("id") == "everest.typography"]
+                    if len(matches) > 1 or (matches and not same(matches[0], {"id": "everest.typography"})):
+                        raise Conflict("Changed typography plugin entry; preserving shell.json")
+                    shell["plugins"] = [item for item in plugins if item not in matches]
+                    if not shell["plugins"] and "plugins" not in original_shell:
+                        shell.pop("plugins")
                 if not bar and "bar" not in original_shell:
                     shell.pop("bar", None)
                 restored = original if same(shell, original_shell) else encoded(shell)
@@ -387,7 +426,7 @@ def main():
     if args.command == "doctor":
         print("Target: Omarchy 4.0.6 / Lua Hyprland / Quickshell")
         print("Platform:", sys.platform)
-        for command in ("omarchy-version", "hyprctl", "qs", "magick", "rsvg-convert", "gtk-launch"):
+        for command in ("omarchy-version", "hyprctl", "qs", "gtk-launch"):
             print(command + ":", shutil.which(command) or "missing")
         if shutil.which("omarchy-version"):
             subprocess.run(["omarchy-version"], check=False)

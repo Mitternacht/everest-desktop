@@ -30,9 +30,12 @@ and authentication services. Only the main bar's documented user configuration
 is changed. Unknown bar properties and other root configuration keys are kept.
 
 Use palette-only local theme directories plus supported shell section overrides.
-No code is hidden inside theme Lua. Omarchy generates application colors through
-its normal templates. Original SVG mountain artwork is converted to PNG by the
-ImageMagick runtime and librsvg SVG renderer on the target machine.
+No code is hidden inside theme Lua. A dedicated, documented user service plugin
+binds the shared shell font to Noto Sans. Its binding restores the previous value
+when unloaded. Terminal font settings are untouched. Omarchy generates application colors through
+its normal templates. Photographic mountain backgrounds are bundled as 3840x2160 JPEGs. The Prepare
+wallpapers workflow fetches the selected assets on a GitHub runner; installation
+only copies their version-controlled bytes.
 
 An appended Lua include runs after defaults and existing personal modules. The
 layer uses the inspected hl API, not legacy Hyprland .conf syntax. New windows
@@ -46,8 +49,9 @@ deterministic rather than macOS's modifier-held app-switcher UI.
 
 ## Stages
 
-1. **Core, implemented:** themes, original wallpapers, top bar, dock, launcher
-   entry point, floating windows, shortcuts, basic input, backups/removal and CI.
+1. **Core, implemented:** themes, photographic backgrounds, top bar, dock,
+   proportional typography, graphical Settings, launcher entry point, floating
+   windows, shortcuts, basic input, backups/removal and CI.
 2. **Graphical acceptance, pending:** follow testing.md on real Omarchy 4.0.6;
    record display, driver, Quickshell/Hyprland versions and hardware results.
 3. **Refinements, deferred:** overview, auto-hide, motion preferences, advanced
@@ -55,9 +59,8 @@ deterministic rather than macOS's modifier-held app-switcher UI.
    extensions only after compatibility and maintenance checks.
 
 The official Omarchy package set supplies Quickshell, Nautilus, Foot, ImageMagick,
-fonts, and Python through its existing dependencies. SVG rendering also requires
-librsvg's rsvg-convert, commonly installed by desktop applications; preflight
-checks it explicitly. No additional shell, launcher, or compositor plugin is
+fonts, and Python through its existing dependencies. Bundled JPEG backgrounds
+need no local rendering package or network call. No additional shell, launcher, or compositor plugin is
 required. The installer never installs packages for you.
 
 ## Reversibility

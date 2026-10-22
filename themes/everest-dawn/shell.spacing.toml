@@ -1,2 +1,5 @@
 scale = 1.0
 scale-with-font = true
+control-height = 32
+popup-row-height = 32
+row-gap = 10

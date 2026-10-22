@@ -3,7 +3,6 @@
   "position": "top",
   "transparent": false,
   "centerAnchor": "omarchy.clock",
-  "fontFamily": "Noto Sans",
   "layout": {
     "left": [
       {
@@ -13,7 +12,8 @@
         "id": "omarchy.workspaces"
       },
       {
-        "id": "omarchy.active-window"
+        "id": "omarchy.active-window",
+        "maxWidth": 180
       }
     ],
     "center": [

@@ -1,0 +1,27 @@
+name: Prepare wallpapers
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: everest-wallpapers
+  cancel-in-progress: false
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: main
+      - name: Fetch selected photographs on the GitHub runner
+        run: python3 tools/fetch_wallpapers.py
+      - name: Commit bundled assets
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/dawn.jpg assets/dusk.jpg assets/wallpapers.lock.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Bundle photographic Dawn and Dusk backgrounds"
+            git push origin HEAD:main
+          fi

@@ -73,7 +73,7 @@ class InstallerTests(unittest.TestCase):
         self.assertEqual(self.app.read(self.app.state / "manifest.json"), state)
         shell = json.loads(self.shell.read_text())
         self.assertEqual(shell["idle"]["lock"], 900)
-        self.assertEqual(shell["plugins"], [{"id": "personal.widget"}])
+        self.assertEqual(shell["plugins"], [{"id": "personal.widget"}, {"id": "everest.typography"}])
         self.assertEqual(shell["disabledPlugins"], ["omarchy.weather"])
         self.assertEqual(shell["bar"]["customSetting"], "keep")
         self.uninstall()
@@ -279,16 +279,51 @@ class InstallerTests(unittest.TestCase):
         with self.assertRaises(installer.Conflict):
             self.app.plan_uninstall()
 
-    def test_production_wallpaper_render_is_deterministic(self):
-        if not shutil.which("magick"):
-            self.skipTest("ImageMagick 7 is supplied by the Arch CI job")
+    def test_bundled_wallpapers_copy_without_subprocess_or_network(self):
         app = installer.Everest(self.home, ROOT, enforce=True)
-        first = app.payload()
-        second = app.payload()
+        with patch("subprocess.check_output", side_effect=AssertionError("Unexpected process")):
+            payload = app.payload()
         for name in ("dawn", "dusk"):
-            key = ".config/omarchy/themes/everest-" + name + "/backgrounds/everest.png"
-            self.assertTrue(first[key].startswith(b"\x89PNG\r\n\x1a\n"))
-            self.assertEqual(first[key], second[key])
+            key = ".config/omarchy/themes/everest-" + name + "/backgrounds/everest.jpg"
+            self.assertEqual(payload[key], (ROOT / "assets" / (name + ".jpg")).read_bytes())
+            self.assertTrue(payload[key].startswith(b"\xff\xd8\xff"))
+
+    def test_obsolete_managed_payload_is_retired_safely(self):
+        _, manifest = self.install()
+        relative = ".config/omarchy/themes/everest-dawn/backgrounds/everest.png"
+        old = self.home / relative
+        old.write_bytes(b"old wallpaper")
+        manifest["files"][relative] = {
+            "before": None, "after": installer.digest(old.read_bytes()), "mode": 0o644,
+            "backup": "backups/unused-retired-backup"}
+        self.app.atomic(self.app.state / "manifest.json", installer.encoded(manifest))
+        ops, updated = self.app.plan_install()
+        self.assertNotIn(relative, updated["files"])
+        index = next(i for i, op in enumerate(ops, 1) if op[0] == relative)
+        with self.assertRaises(OSError):
+            self.app.execute(ops, updated, fail_after=index)
+        self.app.recover()
+        self.assertEqual(old.read_bytes(), b"old wallpaper")
+        ops, updated = self.app.plan_install()
+        self.app.execute(ops, updated)
+        self.assertFalse(old.exists())
+        self.assertEqual(self.app.plan_install()[0], [])
+        self.uninstall()
+        self.assertEqual(self.snapshot(), self.before)
+
+    def test_edited_obsolete_payload_is_not_deleted(self):
+        _, manifest = self.install()
+        relative = ".config/everest/retired.txt"
+        old = self.home / relative
+        old.write_bytes(b"my edited old file")
+        manifest["files"][relative] = {
+            "before": None, "after": installer.digest(b"original old file"), "mode": 0o644,
+            "backup": "backups/unused-retired-backup"}
+        self.app.atomic(self.app.state / "manifest.json", installer.encoded(manifest))
+        before = self.snapshot()
+        with self.assertRaises(installer.Conflict):
+            self.app.plan_install()
+        self.assertEqual(self.snapshot(), before)
 
 
 class SwitchingTests(unittest.TestCase):

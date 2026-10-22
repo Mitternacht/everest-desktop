@@ -3,7 +3,8 @@ import json
 from pathlib import Path
 import re
 import tomllib
-import xml.etree.ElementTree as ET
+import hashlib
+import struct
 
 root = Path(__file__).resolve().parents[1]
 bar = json.loads((root / "config/shell-bar.json").read_text())
@@ -26,6 +27,26 @@ for mode in ("dawn", "dusk"):
         tomllib.loads(path.read_text())
     dock = json.loads((theme / "everest-dock.json").read_text())
     assert all(dock[key] == palette[key] for key in dock)
-    svg = ET.parse(root / "assets" / (mode + ".svg")).getroot()
-    assert svg.attrib["viewBox"] == "0 0 2560 1440"
-print("JSON, TOML, original SVG assets, and theme schemas passed.")
+    photo = root / "assets" / (mode + ".jpg")
+    data = photo.read_bytes()
+    assert data.startswith(b"\xff\xd8\xff")
+    position = 2
+    while position < len(data):
+        assert data[position] == 0xff
+        while data[position] == 0xff:
+            position += 1
+        marker = data[position]
+        position += 1
+        length = struct.unpack(">H", data[position:position + 2])[0]
+        if marker in (0xc0, 0xc1, 0xc2):
+            height, width = struct.unpack(">HH", data[position + 3:position + 7])
+            assert (width, height) == (3840, 2160)
+            break
+        position += length
+    else:
+        raise AssertionError("No JPEG frame dimensions found")
+    lock = json.loads((root / "assets/wallpapers.lock.json").read_text())["photos"][mode]
+    assert hashlib.sha256(data).hexdigest() == lock["sha256"]
+plugin = json.loads((root / "plugins/everest.typography/manifest.json").read_text())
+assert plugin["id"] == "everest.typography" and plugin["kinds"] == ["service"]
+print("JSON, TOML, bundled photographs, plugin manifest, and theme schemas passed.")

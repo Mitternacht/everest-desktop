@@ -3,11 +3,19 @@
 [![Validate](https://github.com/Mitternacht/everest-desktop/actions/workflows/validate.yml/badge.svg)](https://github.com/Mitternacht/everest-desktop/actions/workflows/validate.yml)
 
 A floating-first, macOS-inspired desktop layer for **Omarchy 4.0.6**.
-Restrained colors, a top bar, an application dock, and familiar Super-key shortcuts. **Dawn** is light; **Dusk** is dark.
+A proportional sans-serif interface, photographic backgrounds, a top bar,
+application dock, graphical Settings, and familiar Super-key shortcuts. **Dawn** is light; **Dusk** is dark.
 
 Everest is an additional user configuration layer. Omarchy retains its update
 mechanism, launcher, notifications, system controls, lock screen, and polkit agent.
 It does not run macOS applications.
+
+![Dawn](assets/dawn.jpg)
+![Dusk](assets/dusk.jpg)
+
+The photographs are the bundled backgrounds; they are not screenshots of a
+tested desktop. The interface is designed around everyday graphical controls,
+with terminal tools available when needed rather than permanently pinned.
 
 This project was authored directly on GitHub without a local checkout on the
 authoring machine. Automated checks run on GitHub. A real Omarchy graphical
@@ -28,7 +36,8 @@ The small architecture is:
 |---|---|
 | Theme | Original colors.toml palettes and supported shell section overrides |
 | Top bar | Existing omarchy.bar, laid out through user shell.json |
-| Dock | Separate Quickshell instance; existing installed runtime |
+| Dock and Settings | Separate Quickshell instance; graphical settings categories |
+| Interface typography | Small supported service plugin binds shell text to Noto Sans |
 | Window behavior/input | One appended dofile include in user hyprland.lua |
 | App/window switching and shelf | Small Python helper using public hyprctl IPC |
 | Installation | Python standard library, backups, manifest and durable undo journal |
@@ -42,7 +51,7 @@ Install on the **target Linux machine**, as its normal desktop user:
 
 - Omarchy **4.0.6**, including its Lua-based Hyprland configuration.
 - Existing ~/.config/hypr/hyprland.lua and ~/.config/omarchy/shell.json.
-- Python 3.11+, Quickshell 0.3.2-compatible APIs, ImageMagick 7, librsvg's rsvg-convert, and hyprctl.
+- Python 3.11+, Quickshell 0.3.2-compatible APIs, and hyprctl.
 - Omarchy's existing uwsm-app and gtk-launch desktop-entry launch helpers.
 - Standard Omarchy wrappers: omarchy-menu, omarchy-launch-nautilus,
   omarchy-launch-browser, and xdg-terminal-exec.
@@ -70,13 +79,14 @@ python3 everest.py plan
 ~~~
 
 Plan and --dry-run make no target or state-directory changes. Installation
-renders the included SVG wallpaper locally on the target using ImageMagick and
-copies the project-owned configuration. It does not download dependencies.
+copies the bundled photographs and project-owned configuration. No rendering
+packages or network access are needed during installation.
 
 Files managed:
 
 ~~~text
-~/.config/everest/{everest.py,hyprland.lua,actions.py,dock/shell.qml}
+~/.config/everest/{everest.py,hyprland.lua,actions.py,dock/*.qml}
+~/.config/omarchy/plugins/everest.typography/{manifest.json,Service.qml}
 ~/.config/omarchy/themes/everest-{dawn,dusk}/...
 ~/.config/hypr/hyprland.lua                  (one marked include)
 ~/.config/omarchy/shell.json                 (selected bar properties)
@@ -84,6 +94,8 @@ Files managed:
 
 Existing Everest/theme directories are refused on first installation. Other
 shell settings, idle timeouts, plugins, and authentication services are retained.
+One Everest typography service is added alongside the existing plugin list; it
+changes shell text to Noto Sans and restores the prior font when unloaded.
 The bar layout is replaced; its original value is backed up. Everest takes
 precedence over earlier personal settings for the specific keys it configures.
 
@@ -118,18 +130,21 @@ existing graphical session without logging out:
 qs -n -p "$HOME/.config/everest/dock"
 ~~~
 
-Run that command once. To refresh the main bar without restarting the shell:
+Run that command once. To load the typography plugin and refresh the main bar without restarting the shell:
 
 ~~~bash
+omarchy-shell shell rescanPlugins
 omarchy-shell shell reloadConfig
 ~~~
 
-The dock follows Dawn/Dusk palette changes within three seconds. It keeps its
+The dock and Settings follow Dawn/Dusk palette changes within three seconds. It keeps its
 last valid palette if another theme lacks the Everest palette file.
 
 ## Everyday use
 
-- Super+Space opens application search; Super+comma opens the Omarchy menu.
+- Super+Space opens application search; Super+comma opens graphical Settings.
+- Settings has Appearance, Displays, Sound, Network, Bluetooth, Power,
+  Notifications, and Lock Screen controls. The same window opens from the dock.
 - Click dock icons to launch/focus. Repeated clicks cycle that app's windows;
   right-click launches another instance where the application supports it.
 - Super+Tab switches between application classes. Super+grave switches windows
@@ -165,7 +180,8 @@ python3 everest.py plan
 ~~~
 
 Identical reinstallation changes no managed files and creates no new backups.
-Updates retain the initial pre-install backups. A changed managed payload or bar
+Updates retain the initial pre-install backups. Obsolete managed files are
+retired only if unchanged; unknown files are preserved. A changed managed payload or bar
 property causes a conflict instead of overwriting your work. Unrelated edits
 outside the marked Lua block or managed bar properties survive removal.
 
@@ -228,7 +244,8 @@ Otherwise, it removes the unchanged Lua include and restores the managed bar
 properties while preserving unrelated edits. Modified managed values cause a
 reported conflict before any removal. Save those edits separately and reconcile
 them with the installed version/backups; there is no force-overwrite flag.
-Unknown files you added to owned directories are kept.
+Unknown files you added to owned directories are kept. Reload the shell config
+and rescan plugins after removal to unload typography without a session restart.
 
 Removal does not reverse unrelated application actions performed by upstream
 theme hooks, remove packages, delete backups, or restart your session.
@@ -273,6 +290,7 @@ this as a daily-driver setup.
 
 ## License
 
-MIT; see [LICENSE](LICENSE) and [NOTICE](NOTICE). Code, palettes, and mountain
-artwork are original to this project. Installed system icons and runtime
-dependencies retain their respective licenses. No Apple assets are included.
+MIT; see [LICENSE](LICENSE) and [NOTICE](NOTICE). Code and palettes are MIT licensed. Bundled photographs have their separate
+[asset license](assets/LICENSE.txt), which does not require attribution.
+Installed system icons and runtime dependencies retain their respective licenses.
+No Apple assets are included.
