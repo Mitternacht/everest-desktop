@@ -1,4 +1,8 @@
-# Architecture and implementation plan
+# Architecture
+
+Everest's [vision](../VISION.md) defines the intended desktop experience. This
+document describes the current prototype's implementation. The
+[roadmap](../ROADMAP.md) tracks the work and acceptance evidence still needed.
 
 ## Inspected baseline
 
@@ -47,16 +51,17 @@ cycle in stable alphabetical class order; within a group the most recently used
 window is selected. Within-app switching cycles stable window addresses. This is
 deterministic rather than macOS's modifier-held app-switcher UI.
 
-## Stages
+## Implementation status
 
-1. **Core, implemented:** themes, photographic backgrounds, top bar, dock,
-   proportional typography, graphical Settings, launcher entry point, floating
-   windows, shortcuts, basic input, backups/removal and CI.
-2. **Graphical acceptance, pending:** follow testing.md on real Omarchy 4.0.6;
-   record display, driver, Quickshell/Hyprland versions and hardware results.
-3. **Refinements, deferred:** overview, auto-hide, motion preferences, advanced
-   gestures, per-device tuning, and robust user-editable dock pinning. Select
-   extensions only after compatibility and maintenance checks.
+The initial integration code is present. Full graphical acceptance remains
+pending. The current Settings window routes to existing Omarchy controls;
+setup, updates, and recovery still use command-line tools. Pointer window
+controls, common-application consistency, and hardware behavior need further
+work and testing.
+
+The roadmap prioritizes a verified graphical baseline, a consistent visual
+system, complete everyday workflows, and approachable setup and maintenance.
+Overview, dock effects, and advanced gestures are later work.
 
 The official Omarchy package set supplies Quickshell, Nautilus, Foot, ImageMagick,
 fonts, and Python through its existing dependencies. Bundled JPEG backgrounds
