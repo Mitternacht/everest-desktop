@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2560" height="1440" viewBox="0 0 2560 1440">
+  <title>Everest Dawn — original mountain study</title>
+  <defs><linearGradient id="sky" x2="0" y2="1"><stop stop-color="#c7d8ec"/><stop offset="1" stop-color="#f5e5ce"/></linearGradient></defs>
+  <path fill="url(#sky)" d="M0 0h2560v1440H0z"/>
+  <circle cx="1840" cy="350" r="86" fill="#fff4d7" opacity=".85"/>
+  <path fill="#b7c6d6" d="M0 1050L350 740 570 910 1050 520 1270 770 1700 260 1960 670 2200 480 2560 900V1440H0Z"/>
+  <path fill="#f0f5fa" d="M1050 520L945 680 1040 650 1110 715 1155 680ZM1700 260L1495 560 1610 500 1685 565 1770 460 1870 530ZM2200 480L2100 625 2195 590 2260 620Z"/>
+  <path fill="#8eabc3" d="M0 1160L280 950 600 1090 1020 820 1450 1140 1860 735 2170 1020 2560 780V1440H0Z"/>
+  <path fill="#6889a5" d="M0 1300L360 1110 760 1250 1270 1030 1670 1260 2060 1070 2560 1220V1440H0Z"/>
+  <path fill="#42647f" d="M0 1390L470 1270 1020 1360 1580 1230 2140 1340 2560 1250V1440H0Z"/>
+</svg>
