@@ -1,0 +1,6 @@
+#!/bin/bash
+# Launch Everest lighting from this checkout or from an installed Omarchy tree.
+set -euo pipefail
+here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export PYTHONPATH="$here${PYTHONPATH:+:$PYTHONPATH}"
+exec python3 -m everest_lights "$@"

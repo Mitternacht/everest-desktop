@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Everest Lights
+Comment=Alienware keyboard and chassis lighting
+Exec=omarchy keyboard lights
+Icon=everest-lights
+Terminal=false
+Type=Application
+Categories=Settings;HardwareSettings;
+StartupNotify=true
+StartupWMClass=com.everest.Lights

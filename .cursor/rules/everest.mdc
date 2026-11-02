@@ -1,0 +1,13 @@
+---
+description: Everest is this fork of Omarchy. Read before any work in the repo.
+alwaysApply: true
+---
+
+# Everest
+
+This checkout is **Everest**, Edward's custom evolution of Omarchy. He should not have to restate that.
+
+- Active repo: `Mitternacht/everest-desktop`, a fork of `omacom/omarchy`. Default branch is `quattro`. Push here when he asks to publish.
+- Preserved prototype, not this working tree: `Mitternacht/everest-desktop-prototype` (overlay on Omarchy 4.0.6). It holds the Dawn/Dusk themes, dock, graphical settings entry, and the product intent: a calm desktop, macOS-level care in everyday interaction, and its own mountain visual identity.
+- The tree is still upstream Omarchy. Follow `AGENTS.md` and `agents/skills/` for code, install scripts, and the shell. Keep Everest changes mergeable. Do not rename Omarchy to Everest in drive-by edits.
+- The machine under development is his Alienware x15 R2 (hostname `x-15`). Hardware control for it is in the Alienware rule.

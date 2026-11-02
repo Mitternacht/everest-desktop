@@ -1,0 +1,13 @@
+[Unit]
+Description=Everest Alienware lighting
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=@OMARCHY_PATH@/default/everest-lights/everest-lights daemon
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=graphical-session.target

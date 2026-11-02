@@ -1,0 +1,5 @@
+# Let the active session reach the x15 R2 lighting controllers.
+# The keyboard node is also the typing keyboard. Do not unbind hid-generic.
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="187c", ATTRS{idProduct}=="0550", MODE="0660", TAG+="uaccess"
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="0d62", ATTRS{idProduct}=="babc", MODE="0660", TAG+="uaccess"
+SUBSYSTEM=="input", ATTRS{idVendor}=="0d62", ATTRS{idProduct}=="babc", TAG+="uaccess"

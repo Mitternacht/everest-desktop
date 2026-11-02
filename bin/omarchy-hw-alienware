@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# omarchy:summary=Detect the Alienware x15 R2, the machine Everest lights are built for.
+
+[[ $(cat /sys/class/dmi/id/sys_vendor 2>/dev/null) == "Alienware" &&
+   $(cat /sys/class/dmi/id/product_name 2>/dev/null) == "Alienware x15 R2" ]]

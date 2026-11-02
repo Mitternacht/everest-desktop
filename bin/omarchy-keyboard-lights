@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# omarchy:summary=Control Alienware keyboard and chassis lights
+# omarchy:args=[open|setup|off]
+# omarchy:examples=omarchy keyboard lights | omarchy keyboard lights setup | omarchy keyboard lights off
+
+set -euo pipefail
+
+root="${OMARCHY_PATH:-}"
+if [[ -z $root ]]; then
+  root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+fi
+
+launcher="$root/default/everest-lights/everest-lights"
+command="${1:-open}"
+
+case "$command" in
+  open | setup | off | daemon | check | probe | install-system)
+    exec "$launcher" "$command"
+    ;;
+  *)
+    echo "Usage: omarchy keyboard lights [open|setup|off]" >&2
+    exit 1
+    ;;
+esac

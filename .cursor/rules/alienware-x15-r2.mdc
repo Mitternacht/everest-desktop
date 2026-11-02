@@ -1,0 +1,27 @@
+---
+description: Alienware x15 R2 lighting and thermal control on this Everest machine.
+alwaysApply: true
+---
+
+# Alienware x15 R2
+
+Measured on this machine (BIOS 1.34.0, kernel 7.2.8-9-omarchy, board 03M3WT). Windows Alienware Command Center has no useful Linux build. Wine will not drive these devices, and passing the keyboard through to a VM steals typing.
+
+## RGB is two USB HID devices, not kernel LEDs
+
+Both are bound to `hid-generic`. There is no `rgb_zones` sysfs. The old WMI zone interface is pre-2018 hardware.
+
+- Chassis `187c:0550` Alienware AW-ELC, hidraw, 33-byte output report. AlienFX APIv4 (report id 0): power button, lid logo, light bar.
+- Keyboard `0d62:babc` Darfon, "DELL Technologies Keyboard". Vendor page `0xFF89`, feature report `0xCC`, 63 bytes. AlienFX APIv5 per-key. This is also the typing keyboard. Use hidraw feature reports. Never unbind `hid-generic`.
+
+Protocol reference: [tr1xem/alienfx-linux](https://github.com/tr1xem/alienfx-linux) (APIv4 and APIv5). `T-Troll/alienfx-tools` is Windows-only. AUR `alienfx` is an older APIv4-only tool and does not cover this keyboard.
+
+## Thermals already work in-tree
+
+`alienware-wmi` is bound to WMAX `A70591CE-…`. Platform profile `alienware-wmi` offers `low-power quiet balanced balanced-performance performance custom`. hwmon `alienware_wmi` has CPU and GPU fan RPM plus `fanN_boost` (0–255). Boost adds to the firmware curve; it cannot pull fans below it. Prefer this over `dell_smm`.
+
+The x15 R2 DMI entry uses `generic_quirks`: hwmon and profiles on, G-Mode off. `performance` is not G-Mode here. Do not load `acpi_call` or install AUR `awcc-bin` beside this driver. Both talk to the same WMI device, and AWCC's ACPI calls fail while `alienware_wmi` owns it. AWCC's own lighting path is alienfx-linux anyway.
+
+## Where Everest should grow this
+
+Detector `bin/omarchy-hw-alienware`, root leaf `install/hardware/alienware-lights.sh`, user service `install/user/hardware/alienware-lights.sh`. The app is `default/everest-lights/` and opens with `omarchy keyboard lights`. Typing mode maps evdev keys to AlienFX ids and repaints the keyboard. Do not load `acpi_call`. Do not unbind `hid-generic`.
