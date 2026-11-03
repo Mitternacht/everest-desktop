@@ -150,17 +150,28 @@ class Keyboard:
         try:
             fcntl.ioctl(self.fd, _set_feature_ioc(FEATURE_LEN), buf, True)
         except OSError as exc:
-            raise HidError(f"keyboard feature report failed: {exc}") from exc
+            raise HidError(exc.errno, f"keyboard feature report failed: {exc}") from exc
 
     def reset(self) -> None:
         self._feature(bytes((0x94,)))
+
+    def set_brightness(self, level: int) -> None:
+        """Hardware dimmer under every key color; Fn+F7 changes it too.
+
+        Level 0 blanked an m16 R2 keyboard until reboot, so it is never sent.
+        """
+        self._feature(bytes((0x83, 0x38, 0x9C, max(1, min(255, level)))))
 
     def enter_custom_mode(self) -> None:
         """Leave the firmware animation and accept per-key colors."""
         self.reset()
         self._feature(bytes((0x80, 0x01, 0xFE, 0x00, 0x00, 0x01, 0x01, 0x01)))
         self._feature(bytes((0x8B, 0x01, 0xFF)))
-        time.sleep(0.02)
+        # Packets sent in the first 20-50 ms after this are dropped, and the
+        # first color packet carries ids 0-29: Esc, the F row and the audio keys.
+        time.sleep(0.1)
+        # Full hardware level; the app's brightness scales colors instead.
+        self.set_brightness(255)
         self.ready = True
 
     def paint(self, colors: dict[int, tuple[int, int, int]], restart: bool = False) -> None:
@@ -169,8 +180,8 @@ class Keyboard:
         items = [(light_id, rgb[0], rgb[1], rgb[2]) for light_id, rgb in sorted(colors.items())]
         for payload in color_set_payloads(items):
             self._feature(payload)
-        self._feature(bytes((0x8C, 0x13)))
-        self._feature(bytes((0x8B, 0x01, 0xFF)))
+            # Loop after every packet, as Zeecka's measured m15 R7 code does.
+            self._feature(bytes((0x8C, 0x13)))
 
 
 class Chassis:

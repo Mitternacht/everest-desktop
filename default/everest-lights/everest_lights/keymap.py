@@ -26,9 +26,10 @@ KEY_LIGHTS: dict[int, tuple[int, ...]] = {
     102: (13,),  # HOME
     107: (14,),  # END
     111: (15,),  # DELETE
-    113: (16,),  # MUTE
+    113: (16,),  # MUTE, speaker
     114: (17,),  # VOLUMEDOWN
     115: (18,),  # VOLUMEUP
+    190: (19,),  # F20, the mic-mute key on this Dell EC
     248: (19,),  # MICMUTE
     41: (20,),  # GRAVE
     2: (21,),  # 1
@@ -58,7 +59,7 @@ KEY_LIGHTS: dict[int, tuple[int, ...]] = {
     26: (52,),  # LEFTBRACE
     27: (53,),  # RIGHTBRACE
     43: (55,),  # BACKSLASH
-    58: (60,),  # CAPSLOCK
+    58: (60, 61),  # CAPSLOCK. 61 is the second LED on this keyboard family.
     30: (62,),  # A
     31: (63,),
     32: (64,),
@@ -71,7 +72,7 @@ KEY_LIGHTS: dict[int, tuple[int, ...]] = {
     39: (71,),  # SEMICOLON
     40: (72,),  # APOSTROPHE
     28: (74,),  # ENTER
-    42: (80,),  # LEFTSHIFT
+    42: (80, 81),  # LEFTSHIFT, two LEDs under the wide key
     44: (83,),  # Z
     45: (84,),
     46: (85,),
@@ -84,8 +85,10 @@ KEY_LIGHTS: dict[int, tuple[int, ...]] = {
     53: (92,),  # SLASH
     54: (94,),  # RIGHTSHIFT
     29: (100,),  # LEFTCTRL
-    464: (101,),  # FN, when the firmware reports it
-    125: (102,),  # LEFTMETA
+    112: (101,),  # MACRO, the Fn key on the Dell EC keyboard
+    464: (101,),  # FN, when a keyboard reports it directly
+    125: (102, 103),  # LEFTMETA, two LEDs under the Super key
+    126: (109,),  # RIGHTMETA
     56: (104,),  # LEFTALT
     57: (105,),  # SPACE
     100: (111,),  # RIGHTALT
@@ -98,6 +101,11 @@ KEY_LIGHTS: dict[int, tuple[int, ...]] = {
 
 # Every id we paint so unmapped LEDs follow the resting color.
 PAINTED_IDS = tuple(range(0, 136))
+
+# Keys whose light shows a state instead of the typing effect.
+CAPS_LIGHTS = KEY_LIGHTS[58]
+SPEAKER_MUTE_LIGHTS = KEY_LIGHTS[113]
+MIC_MUTE_LIGHTS = KEY_LIGHTS[248]
 
 
 def lights_for(code: int) -> tuple[int, ...]:
