@@ -1,0 +1,12 @@
+# The x15 R2 firmware's balanced fan table keeps every fan at 0 rpm until the
+# CPU is at about 98°C: under a steady two-thread load the CPU sat at 90-98°C
+# for 7 s before the fans started. balanced-performance runs them at about
+# 2500 rpm from idle, so use it whenever anything selects balanced.
+#
+# power-profiles-daemon writes /sys/firmware/acpi/platform_profile, which sends
+# this device a change event. Writing the device's own profile attribute sends
+# none, so the rule cannot retrigger itself. "add" covers a boot where the
+# firmware is already on balanced. power-profiles-daemon keeps reporting
+# balanced; 0.30 also logs "should not be reached" when it reads the corrected
+# value, because it misspells balanced-performance (fixed upstream after 0.30).
+ACTION=="add|change", SUBSYSTEM=="platform-profile", ATTR{name}=="alienware-wmi", ATTR{choices}=="*balanced-performance*", ATTR{profile}=="balanced", ATTR{profile}="balanced-performance"

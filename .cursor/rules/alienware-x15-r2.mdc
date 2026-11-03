@@ -20,8 +20,10 @@ Protocol reference: [tr1xem/alienfx-linux](https://github.com/tr1xem/alienfx-lin
 
 `alienware-wmi` is bound to WMAX `A70591CE-…`. Platform profile `alienware-wmi` offers `low-power quiet balanced balanced-performance performance custom`. hwmon `alienware_wmi` has CPU and GPU fan RPM plus `fanN_boost` (0–255). Boost adds to the firmware curve; it cannot pull fans below it. Prefer this over `dell_smm`.
 
+Fan tables, measured on AC: `balanced` keeps every fan at 0 rpm until the CPU is at about 98°C. Under a steady two-thread load the CPU sat at 90-98°C for 7 s before the fans started. `balanced-performance` runs them at about 2500 rpm from idle, and `performance` at about 6000. A turbo burst reads 90°C+ within a second on any table, so judge a curve by sustained load, and read fans at least 4 s after a switch: every table reads 0 rpm for the first seconds. `default/udev/alienware-fans.rules` rewrites `balanced` to `balanced-performance` on the platform-profile change event. power-profiles-daemon 0.30 cannot select `balanced-performance`, keeps reporting `balanced`, and logs "should not be reached" when it reads the rewritten value because it misspells it (fixed upstream after 0.30).
+
 The x15 R2 DMI entry uses `generic_quirks`: hwmon and profiles on, G-Mode off. `performance` is not G-Mode here. Do not load `acpi_call` or install AUR `awcc-bin` beside this driver. Both talk to the same WMI device, and AWCC's ACPI calls fail while `alienware_wmi` owns it. AWCC's own lighting path is alienfx-linux anyway.
 
 ## Where Everest should grow this
 
-Detector `bin/omarchy-hw-alienware`, root leaf `install/hardware/alienware-lights.sh`, user service `install/user/hardware/alienware-lights.sh`. The app is `default/everest-lights/` and opens with `omarchy keyboard lights`. Typing mode maps evdev keys to AlienFX ids and repaints the keyboard. Do not load `acpi_call`. Do not unbind `hid-generic`.
+Detector `bin/omarchy-hw-alienware`, root leaves `install/hardware/alienware-lights.sh` and `install/hardware/alienware-fans.sh`, user service `install/user/hardware/alienware-lights.sh`. The app is `default/everest-lights/` and opens with `omarchy keyboard lights`. Typing mode maps evdev keys to AlienFX ids and repaints the keyboard. Do not load `acpi_call`. Do not unbind `hid-generic`.
