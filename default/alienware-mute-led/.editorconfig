@@ -1,0 +1,8 @@
+# Kernel code and Makefiles use tabs, unlike the rest of the repo.
+[*.c]
+indent_style = tab
+indent_size = 8
+
+[Makefile]
+indent_style = tab
+indent_size = 8

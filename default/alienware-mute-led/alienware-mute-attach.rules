@@ -1,0 +1,3 @@
+# Attach the speaker-mute lamp each time the SOF card's control device appears,
+# at boot and after the card registers again; the attachment lives in that card.
+ACTION=="add", SUBSYSTEM=="sound", KERNEL=="controlC*", ATTRS{id}=="sofhdadsp", TAG+="systemd", ENV{SYSTEMD_WANTS}+="alienware-mute-attach.service"

@@ -1,0 +1,11 @@
+[Unit]
+Description=Light the Alienware speaker-mute key lamp while the internal speakers are muted
+# alienware-mute-attach.rules starts this each time the sofhdadsp control
+# device appears: at boot, and whenever the card registers again.
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/everest/alienware-mute-attach
+
+[Install]
+WantedBy=multi-user.target

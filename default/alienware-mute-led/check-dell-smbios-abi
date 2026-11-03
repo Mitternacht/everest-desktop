@@ -1,0 +1,93 @@
+#!/bin/bash
+# Fail the build unless the target kernel's dell-smbios still matches what
+# alienware_mute_led.c declares by hand: struct calling_interface_token and the
+# prototypes of dell_fill_request, dell_send_request and dell_smbios_find_token.
+# dell-smbios.h is not in the kernel build tree, and without CONFIG_MODVERSIONS
+# nothing checks these at load time. A shifted struct would make the module
+# write whatever sits at the location offset as an SMBIOS token location.
+# The Makefile runs this on every build, DKMS builds included.
+#
+# Usage: check-dell-smbios-abi KERNELRELEASE [KERNEL_BUILD_DIR]
+
+set -euo pipefail
+
+kver=${1:?usage: check-dell-smbios-abi KERNELRELEASE [KERNEL_BUILD_DIR]}
+kdir=${2:-/lib/modules/$kver/build}
+vmlinux=$kdir/vmlinux
+
+fail() {
+  echo "check-dell-smbios-abi: $*" >&2
+  echo "check-dell-smbios-abi: refusing to build alienware_mute_led for $kver; compare alienware_mute_led.c with this kernel's drivers/platform/x86/dell/dell-smbios.h" >&2
+  exit 1
+}
+
+for tool in pahole pfunct modinfo; do
+  if ! command -v "$tool" >/dev/null; then
+    fail "$tool is not installed (pahole provides pahole and pfunct)"
+  fi
+done
+
+if [[ ! -r $vmlinux ]]; then
+  fail "$vmlinux is missing, so the BTF of $kver cannot be read"
+fi
+
+if ! ko=$(modinfo -k "$kver" -n dell_smbios 2>/dev/null); then
+  fail "dell_smbios is not installed for $kver"
+fi
+
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+
+# A module's BTF is split against vmlinux; built-in code is in vmlinux itself.
+if [[ $ko == "(builtin)" ]]; then
+  obj=$vmlinux
+  ko="built-in dell_smbios"
+  btf=(-F btf)
+else
+  obj=$tmp/dell-smbios.ko
+  case $ko in
+    *.zst) zstd -q -dc "$ko" >"$obj" ;;
+    *.xz) xz -dc "$ko" >"$obj" ;;
+    *.gz) gzip -dc "$ko" >"$obj" ;;
+    *) cp "$ko" "$obj" ;;
+  esac
+  btf=(-F btf --btf_base "$vmlinux")
+fi
+
+# One "member offset size" line per member, then "size N".
+layout=$(pahole "${btf[@]}" -C calling_interface_token "$obj" 2>/dev/null | awk '
+  match($0, /[A-Za-z_][A-Za-z0-9_]*;[ \t]*\/\*[ \t]*[0-9]+[ \t]+[0-9]+[ \t]*\*\//) {
+    s = substr($0, RSTART, RLENGTH)
+    gsub(/[;\/*]/, " ", s)
+    split(s, f, " ")
+    print f[1], f[2], f[3]
+  }
+  /\/\* size: [0-9]+/ {
+    s = $0
+    sub(/.*\/\* size: /, "", s)
+    sub(/[^0-9].*/, "", s)
+    print "size", s
+  }') || true
+
+expected="tokenID 0 2
+location 2 2
+value 4 2
+stringlength 4 2
+size 6"
+
+if [[ $layout != "$expected" ]]; then
+  layout=${layout//$'\n'/, }
+  fail "struct calling_interface_token in $ko is not {u16 tokenID; u16 location; union {u16 value; u16 stringlength;}}; pahole gave: ${layout:-nothing}"
+fi
+
+check_prototype() {
+  local name=$1 want=$2 got
+  got=$(pfunct "${btf[@]}" -P -f "$name" "$obj" 2>/dev/null) || true
+  if [[ ${got//[[:space:]]/} != "${want//[[:space:]]/}" ]]; then
+    fail "$name in $ko is not '$want'; pfunct gave: ${got:-nothing}"
+  fi
+}
+
+check_prototype dell_fill_request "void dell_fill_request(struct calling_interface_buffer * buffer, u32 arg0, u32 arg1, u32 arg2, u32 arg3);"
+check_prototype dell_send_request "int dell_send_request(struct calling_interface_buffer * buffer, u16 class, u16 select);"
+check_prototype dell_smbios_find_token "struct calling_interface_token * dell_smbios_find_token(int tokenid);"

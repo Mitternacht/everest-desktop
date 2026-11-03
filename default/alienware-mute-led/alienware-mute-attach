@@ -1,0 +1,41 @@
+#!/bin/bash
+# Attach the SOF card's "Master Playback Switch" to the ctl-led speaker group,
+# so platform::mute (alienware-mute-led, audio-mute trigger) lights while the
+# internal speakers are muted. The sof-hda-dsp UCM profile only does this when
+# platform::mute belongs to dell-laptop or msi-ec.
+# The attachment is stored in the card's control, so it goes away whenever the
+# card registers again. alienware-mute-attach.rules starts this, through
+# alienware-mute-attach.service, each time the sofhdadsp control device
+# appears. Attaching a control that is already attached changes nothing.
+
+ctl="Master Playback Switch"
+
+sof_card() {
+  local c
+  for c in /sys/class/sound/card[0-9]*; do
+    if [[ -r $c/id && $(<"$c/id") == "sofhdadsp" ]]; then
+      echo "${c##*/card}"
+      return 0
+    fi
+  done
+  return 1
+}
+
+# snd-ctl-led adds ctl-led/speaker/cardN just after the control device's
+# uevent, and that directory sends no uevent of its own, so wait for it
+# briefly.
+dir=
+for (( tries = 0; tries < 50; tries++ )); do
+  if card=$(sof_card) && [[ -e /sys/class/sound/ctl-led/speaker/card$card/attach ]]; then
+    dir=/sys/class/sound/ctl-led/speaker/card$card
+    break
+  fi
+  sleep 0.2
+done
+
+if [[ -z $dir ]]; then
+  echo "alienware-mute-attach: the sofhdadsp ctl-led speaker group did not appear within 10 s" >&2
+  exit 1
+else
+  printf '%s\n' "$ctl" >"$dir/attach"
+fi
