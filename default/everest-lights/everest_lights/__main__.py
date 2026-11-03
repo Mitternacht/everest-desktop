@@ -205,6 +205,18 @@ def main(argv: list[str] | None = None) -> None:
     if command == "probe":
         probe()
         return
+    if command == "calibrate":
+        try:
+            call({"cmd": "get"}, timeout=0.3)
+        except OSError:
+            pass
+        else:
+            raise SystemExit("Stop the lights first: systemctl --user stop everest-lights.service")
+        from .calibrate import run
+
+        args = (argv if argv is not None else sys.argv[1:])[1:]
+        run([int(part) for part in args[0].split(",")] if args else None)
+        return
     if command == "check":
         keyboard = find_keyboard()
         chassis = find_chassis()
